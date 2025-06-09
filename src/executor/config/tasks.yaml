@@ -1,0 +1,38 @@
+# src/executor/config/tasks.yaml
+
+parse_curl_json_task:
+  description: >
+    Take a curl command provided in {JSON} and parse it to extract the HTTP method, URL, headers, and body content.
+  expected_output: >
+    A Python dictionary containing method, URL, headers, and data fields that can be directly used for making an HTTP request.
+  agent: curl_interpreter_agent
+
+execute_api_task:
+  description: >
+    Using the structured data from the previous task, use the ApiCallerTool to perform the API request and retrieve the HTTP response.
+  expected_output: >
+    The raw response from the API, including HTTP status code, response headers, and body.
+  agent: api_executor_agent
+  context:
+    - parse_curl_json_task
+
+summarize_response_task:
+  description: >
+    Take the raw response from the API call and write a human-readable summary explaining the status and content in simple terms.
+  expected_output: >
+    A markdown summary of the API response including status, key data points, and any error messages.
+  agent: api_response_summarizer_agent
+  context:
+    - parse_curl_json_task
+    - execute_api_task
+
+structure_response_task:
+  description: >
+    Take the raw response from the API and convert it into a clean, structured JSON object with keys: status_code, headers, and parsed body.
+  expected_output: >
+    A JSON object with structured fields representing the HTTP response cleanly.
+  agent: api_response_parser_agent
+  context:
+    - parse_curl_json_task
+    - summarize_response_task
+    - execute_api_task
